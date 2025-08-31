@@ -1,0 +1,4 @@
+time=2025-08-31T13:21:56.063+05:00 level=INFO msg="Server starting..." logFile=logs/log_20250831_132156.log
+time=2025-08-31T13:21:56.063+05:00 level=INFO msg="Configuration loaded" config="&{DB:{Host:localhost Port:5432 User:postgres Password:0000 Name:1337b04rd SSLMode:disable} MinIO:{Endpoint:localhost:9000 AccessKey:minioadmin SecretKey:minioadmin UseSSL:false} Server:{Port:8080 Host:localhost} Log:{Level:info}}"
+time=2025-08-31T13:22:32.111+05:00 level=INFO msg="Starting server" port=8080
+time=2025-08-31T13:22:32.112+05:00 level=ERROR msg="Server failed to start" error="listen tcp :8080: bind: address already in use"

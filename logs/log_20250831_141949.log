@@ -1,0 +1,5 @@
+time=2025-08-31T14:19:49.000+05:00 level=INFO msg="Server starting..." logFile=logs/log_20250831_141949.log
+time=2025-08-31T14:19:49.002+05:00 level=INFO msg="Configuration loaded" config="&{DB:{Host:localhost Port:5432 User:postgres Password:0000 Name:1337b04rd SSLMode:disable} MinIO:{Endpoint:localhost:9000 AccessKey:minioadmin SecretKey:minioadmin UseSSL:false} Server:{Port:8080 Host:localhost} Log:{Level:info}}"
+time=2025-08-31T14:20:25.061+05:00 level=INFO msg="Starting server" port=8080
+time=2025-08-31T14:29:08.157+05:00 level=INFO msg="Shutting down server..."
+time=2025-08-31T14:29:08.158+05:00 level=INFO msg="Server exited"

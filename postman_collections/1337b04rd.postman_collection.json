@@ -1,0 +1,487 @@
+{
+	"info": {
+		"_postman_id": "1337b04rd-complete",
+		"name": "1337b04rd - Complete API Collection",
+		"description": "Complete API collection for 1337b04rd backend with session-based authentication. IMPORTANT: After creating a session, the session_id cookie will be automatically set. For protected endpoints (posts, comments), you need to have a valid session cookie. The author_id and author_name are automatically populated from the session data.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Posts",
+			"item": [
+				{
+					"name": "Create Post",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Test Post Title",
+									"type": "text"
+								},
+								{
+									"key": "content",
+									"value": "This is a test post content",
+									"type": "text"
+								},
+								{
+									"key": "image",
+									"value": "",
+									"type": "file",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/posts",
+							"host": ["{{base_url}}"],
+							"path": ["api", "posts"]
+						}
+					}
+				},
+				{
+					"name": "Get All Posts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/posts?limit=10&offset=0&include_archived=false",
+							"host": ["{{base_url}}"],
+							"path": ["api", "posts"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "offset",
+									"value": "0"
+								},
+								{
+									"key": "include_archived",
+									"value": "false"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Post by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/posts/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "posts", "1"]
+						}
+					}
+				},
+				{
+					"name": "Update Post",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Updated Post Title",
+									"type": "text"
+								},
+								{
+									"key": "content",
+									"value": "This is updated post content",
+									"type": "text"
+								},
+								{
+									"key": "image",
+									"value": "",
+									"type": "file",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/posts/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "posts", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Post",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/posts/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "posts", "1"]
+						}
+					}
+				},
+				{
+					"name": "Archive Post",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/posts/1/archive",
+							"host": ["{{base_url}}"],
+							"path": ["api", "posts", "1", "archive"]
+						}
+					}
+				},
+				{
+					"name": "Unarchive Post",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/posts/1/unarchive",
+							"host": ["{{base_url}}"],
+							"path": ["api", "posts", "1", "unarchive"]
+						}
+					}
+				},
+				{
+					"name": "Get Posts by Author",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/posts/author?author_id=user123&limit=10&offset=0",
+							"host": ["{{base_url}}"],
+							"path": ["api", "posts", "author"],
+							"query": [
+								{
+									"key": "author_id",
+									"value": "user123"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "offset",
+									"value": "0"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Comments",
+			"item": [
+				{
+					"name": "Create Comment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "post_id",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "title",
+									"value": "Test Comment Title",
+									"type": "text"
+								},
+								{
+									"key": "content",
+									"value": "This is a test comment content",
+									"type": "text"
+								},
+								{
+									"key": "reply_to_comment_id",
+									"value": "",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "image",
+									"value": "",
+									"type": "file",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/comments",
+							"host": ["{{base_url}}"],
+							"path": ["api", "comments"]
+						}
+					}
+				},
+				{
+					"name": "Get Comment by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/comments/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "comments", "1"]
+						}
+					}
+				},
+				{
+					"name": "Update Comment",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "id",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "post_id",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "title",
+									"value": "Updated Comment Title",
+									"type": "text"
+								},
+								{
+									"key": "content",
+									"value": "This is updated comment content",
+									"type": "text"
+								},
+								{
+									"key": "author_id",
+									"value": "user123",
+									"type": "text"
+								},
+								{
+									"key": "author_name",
+									"value": "Test User",
+									"type": "text"
+								},
+								{
+									"key": "image",
+									"value": "",
+									"type": "file",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/comments/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "comments", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Comment",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/comments/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "comments", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Comments by Post",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/comments/post?post_id=1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "comments", "post"],
+							"query": [
+								{
+									"key": "post_id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Sessions",
+			"item": [
+				{
+					"name": "Create Session",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/sessions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "sessions"]
+						}
+					}
+				},
+				{
+					"name": "Get Session by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/sessions/session123",
+							"host": ["{{base_url}}"],
+							"path": ["api", "sessions", "session123"]
+						}
+					}
+				},
+				{
+					"name": "Update Session",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "name",
+									"value": "Updated User Name",
+									"type": "text"
+								},
+								{
+									"key": "gender",
+									"value": "male",
+									"type": "text",
+									"description": "Must be 'male' or 'female'"
+								},
+								{
+									"key": "age",
+									"value": "Adult",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/sessions/session123",
+							"host": ["{{base_url}}"],
+							"path": ["api", "sessions", "session123"]
+						}
+					}
+				},
+				{
+					"name": "Delete Session",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/sessions/session123",
+							"host": ["{{base_url}}"],
+							"path": ["api", "sessions", "session123"]
+						}
+					}
+				},
+				{
+					"name": "Cleanup Expired Sessions",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/sessions/cleanup",
+							"host": ["{{base_url}}"],
+							"path": ["api", "sessions", "cleanup"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Images",
+			"item": [
+				{
+					"name": "Get Post Image",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/images/posts/post-image.jpg",
+							"host": ["{{base_url}}"],
+							"path": ["images", "posts", "post-image.jpg"]
+						}
+					}
+				},
+				{
+					"name": "Get Comment Image",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/images/comments/comment-image.jpg",
+							"host": ["{{base_url}}"],
+							"path": ["images", "comments", "comment-image.jpg"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/health",
+					"host": ["{{base_url}}"],
+					"path": ["health"]
+				}
+			}
+		}
+	]
+}
