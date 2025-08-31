@@ -1,13 +1,13 @@
 package service
 
 import (
+	"1337b04rd/internal/adapters/storage"
+	"1337b04rd/internal/domain/models"
+	"1337b04rd/internal/domain/ports"
 	"context"
 	"errors"
 	"mime/multipart"
 	"time"
-	"1337b04rd/internal/domain/models"
-	"1337b04rd/internal/domain/ports"
-	"1337b04rd/internal/adapters/storage"
 )
 
 type PostService struct {
@@ -27,22 +27,22 @@ func NewPostService(postRepo ports.PostRepository, commentRepo ports.CommentRepo
 func (s *PostService) CreatePost(ctx context.Context, post *models.Post, imageFile multipart.File, imageHeader *multipart.FileHeader) error {
 	// Set creation time
 	post.CreatedAt = time.Now()
-	
+
 	// Handle image upload if provided
 	if imageFile != nil && imageHeader != nil {
-		imageURL, err := s.storage.UploadImage(ctx, imageFile, imageHeader.Filename, imageHeader.Header.Get("Content-Type"))
+		imageURL, err := s.storage.UploadPostImage(ctx, imageFile, imageHeader.Filename, imageHeader.Header.Get("Content-Type"))
 		if err != nil {
 			return err
 		}
 		post.ImageURL = imageURL
 	}
-	
+
 	// Create post in database
 	err := s.postRepo.Create(ctx, post)
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -51,17 +51,17 @@ func (s *PostService) GetPost(ctx context.Context, id int) (*models.Post, error)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if post == nil {
 		return nil, errors.New("post not found")
 	}
-	
+
 	// Load comments for the post
 	comments, err := s.commentRepo.GetByPostID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	post.Comments = comments
 	return post, nil
 }
@@ -71,7 +71,7 @@ func (s *PostService) GetPosts(ctx context.Context, limit, offset int, includeAr
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Load comments for each post
 	for _, post := range posts {
 		comments, err := s.commentRepo.GetByPostID(ctx, post.ID)
@@ -80,7 +80,7 @@ func (s *PostService) GetPosts(ctx context.Context, limit, offset int, includeAr
 		}
 		post.Comments = comments
 	}
-	
+
 	return posts, nil
 }
 
@@ -89,7 +89,7 @@ func (s *PostService) GetPostsByAuthor(ctx context.Context, authorID string, lim
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Load comments for each post
 	for _, post := range posts {
 		comments, err := s.commentRepo.GetByPostID(ctx, post.ID)
@@ -98,7 +98,7 @@ func (s *PostService) GetPostsByAuthor(ctx context.Context, authorID string, lim
 		}
 		post.Comments = comments
 	}
-	
+
 	return posts, nil
 }
 
@@ -108,14 +108,14 @@ func (s *PostService) UpdatePost(ctx context.Context, post *models.Post, imageFi
 	if err != nil {
 		return err
 	}
-	
+
 	if existingPost == nil {
 		return errors.New("post not found")
 	}
-	
+
 	// Handle image upload if provided
 	if imageFile != nil && imageHeader != nil {
-		imageURL, err := s.storage.UploadImage(ctx, imageFile, imageHeader.Filename, imageHeader.Header.Get("Content-Type"))
+		imageURL, err := s.storage.UploadPostImage(ctx, imageFile, imageHeader.Filename, imageHeader.Header.Get("Content-Type"))
 		if err != nil {
 			return err
 		}
@@ -124,13 +124,13 @@ func (s *PostService) UpdatePost(ctx context.Context, post *models.Post, imageFi
 		// Keep existing image if no new image provided
 		post.ImageURL = existingPost.ImageURL
 	}
-	
+
 	// Update post in database
 	err = s.postRepo.Update(ctx, post)
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -140,17 +140,17 @@ func (s *PostService) DeletePost(ctx context.Context, id int) error {
 	if err != nil {
 		return err
 	}
-	
+
 	if existingPost == nil {
 		return errors.New("post not found")
 	}
-	
+
 	// Delete post from database
 	err = s.postRepo.Delete(ctx, id)
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 

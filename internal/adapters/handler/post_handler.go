@@ -52,11 +52,12 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	// Create post model with session data
 	post := &models.Post{
-		Title:      title,
-		Content:    content,
-		AuthorID:   session.ID,
-		AuthorName: session.Name,
-		IsArchive:  false,
+		Title:       title,
+		Content:     content,
+		AuthorID:    session.ID,
+		AuthorName:  session.Name,
+		AuthorImage: session.Image,
+		IsArchive:   false,
 	}
 
 	// Get image file if provided

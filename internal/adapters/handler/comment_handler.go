@@ -56,11 +56,12 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 
 	// Create comment model with session data
 	comment := &models.Comment{
-		PostID:     postID,
-		Title:      title,
-		Content:    content,
-		AuthorID:   session.ID,
-		AuthorName: session.Name,
+		PostID:      postID,
+		Title:       title,
+		Content:     content,
+		AuthorID:    session.ID,
+		AuthorName:  session.Name,
+		AuthorImage: session.Image,
 	}
 
 	// Handle reply to comment if provided

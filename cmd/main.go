@@ -11,7 +11,6 @@ import (
 
 	"1337b04rd/config"
 	"1337b04rd/internal/adapters/middleware"
-	"1337b04rd/internal/adapters/storage"
 	"1337b04rd/internal/app"
 	"1337b04rd/pkg/logger"
 
@@ -148,9 +147,9 @@ func setupRouter(app *app.App) *mux.Router {
 	comments.HandleFunc("/post", app.CommentHandler.GetCommentsByPost).Methods("GET")
 
 	// Image serving routes
-	router.HandleFunc("/images/posts/{filename}", storage.ServePostImageHandler(app.Storage)).Methods("GET")
-	router.HandleFunc("/images/comments/{filename}", storage.ServeCommentImageHandler(app.Storage)).Methods("GET")
-	router.HandleFunc("/images/sessions/{filename}", storage.ServeSessionImageHandler(app.Storage)).Methods("GET")
+	router.HandleFunc("/images/posts/{filename}", app.Storage.ServePostImageHandler()).Methods("GET")
+	router.HandleFunc("/images/comments/{filename}", app.Storage.ServeCommentImageHandler()).Methods("GET")
+	router.HandleFunc("/images/avatars/{filename}", app.Storage.ServeAvatarImageHandler()).Methods("GET")
 
 	return router
 }

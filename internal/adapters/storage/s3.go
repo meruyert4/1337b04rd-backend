@@ -18,7 +18,6 @@ type MinioClient struct {
 	avatarBucket  string
 	postBucket    string
 	commentBucket string
-	sessionBucket string // Add session bucket
 }
 
 func NewMinioClient(endpoint, accessKey, secretKey string, useSSL bool) (*MinioClient, error) {
@@ -30,8 +29,8 @@ func NewMinioClient(endpoint, accessKey, secretKey string, useSSL bool) (*MinioC
 		return nil, fmt.Errorf("failed to initialize Minio client: %w", err)
 	}
 
-	// Buckets to create
-	buckets := []string{"avatars", "posts", "comments", "sessions"} // Add "sessions" bucket
+	// Create three buckets: avatars, posts, comments
+	buckets := []string{"avatars", "posts", "comments"}
 
 	for _, bucket := range buckets {
 		for attempts := 0; attempts < 3; attempts++ {
@@ -55,7 +54,6 @@ func NewMinioClient(endpoint, accessKey, secretKey string, useSSL bool) (*MinioC
 		avatarBucket:  "avatars",
 		postBucket:    "posts",
 		commentBucket: "comments",
-		sessionBucket: "sessions", // Set session bucket
 	}, nil
 }
 
@@ -78,25 +76,27 @@ func (m *MinioClient) UploadAvatarFromURL(ctx context.Context, imageUrl string) 
 		return "", fmt.Errorf("failed to upload to minio: %w", err)
 	}
 
-	return fmt.Sprintf("http://localhost:9001/browser/%s/%s", m.avatarBucket, objectName), nil
+	// Return the MinIO URL for the stored image
+	return fmt.Sprintf("http://localhost:9000/%s/%s", m.avatarBucket, objectName), nil
 }
 
-// UploadCommentImage uploads a comment image from form-data
-func (m *MinioClient) UploadCommentImage(ctx context.Context, fileBytes []byte, filename, contentType string) (string, error) {
+// UploadPostImage uploads a post image from multipart.File
+func (m *MinioClient) UploadPostImage(ctx context.Context, file multipart.File, filename, contentType string) (string, error) {
 	objectName := fmt.Sprintf("%d-%s", time.Now().UnixNano(), filename)
 
-	_, err := m.client.PutObject(ctx, m.commentBucket, objectName, bytes.NewReader(fileBytes), int64(len(fileBytes)), minio.PutObjectOptions{
+	_, err := m.client.PutObject(ctx, m.postBucket, objectName, file, -1, minio.PutObjectOptions{
 		ContentType: contentType,
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to upload comment image: %w", err)
+		return "", fmt.Errorf("failed to upload post image: %w", err)
 	}
 
-	return fmt.Sprintf("/images/comments/%s", objectName), nil
+	// Return the MinIO URL for the stored image
+	return fmt.Sprintf("http://localhost:9000/%s/%s", m.postBucket, objectName), nil
 }
 
-// UploadCommentImageFile uploads a comment image from multipart.File
-func (m *MinioClient) UploadCommentImageFile(ctx context.Context, file multipart.File, filename, contentType string) (string, error) {
+// UploadCommentImage uploads a comment image from multipart.File
+func (m *MinioClient) UploadCommentImage(ctx context.Context, file multipart.File, filename, contentType string) (string, error) {
 	objectName := fmt.Sprintf("%d-%s", time.Now().UnixNano(), filename)
 
 	_, err := m.client.PutObject(ctx, m.commentBucket, objectName, file, -1, minio.PutObjectOptions{
@@ -106,40 +106,26 @@ func (m *MinioClient) UploadCommentImageFile(ctx context.Context, file multipart
 		return "", fmt.Errorf("failed to upload comment image: %w", err)
 	}
 
-	return fmt.Sprintf("/images/comments/%s", objectName), nil
+	// Return the MinIO URL for the stored image
+	return fmt.Sprintf("http://localhost:9000/%s/%s", m.commentBucket, objectName), nil
 }
 
-// SaveSession saves session data to the sessions bucket
-func (m *MinioClient) SaveSession(ctx context.Context, sessionID string, sessionData []byte) error {
-	objectName := sessionID
-	_, err := m.client.PutObject(ctx, m.sessionBucket, objectName, bytes.NewReader(sessionData), int64(len(sessionData)), minio.PutObjectOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to upload session: %w", err)
-	}
-	return nil
-}
-
-func (m *MinioClient) Client() *minio.Client {
-	return m.client
-}
-
-func (m *MinioClient) UploadImage(ctx context.Context, file multipart.File, filename, contentType string) (string, error) {
-	// Generate a unique object name using timestamp and filename
+// UploadCommentImageBytes uploads a comment image from bytes
+func (m *MinioClient) UploadCommentImageBytes(ctx context.Context, fileBytes []byte, filename, contentType string) (string, error) {
 	objectName := fmt.Sprintf("%d-%s", time.Now().UnixNano(), filename)
 
-	// Upload the image to the 'posts' bucket
-	_, err := m.client.PutObject(ctx, m.postBucket, objectName, file, -1, minio.PutObjectOptions{
+	_, err := m.client.PutObject(ctx, m.commentBucket, objectName, bytes.NewReader(fileBytes), int64(len(fileBytes)), minio.PutObjectOptions{
 		ContentType: contentType,
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to upload image: %w", err)
+		return "", fmt.Errorf("failed to upload comment image: %w", err)
 	}
 
-	// Construct and return the URL of the uploaded image
-	imageURL := fmt.Sprintf("/images/posts/%s", objectName)
-	return imageURL, nil
+	// Return the MinIO URL for the stored image
+	return fmt.Sprintf("http://localhost:9000/%s/%s", m.commentBucket, objectName), nil
 }
 
+// GetImage retrieves an image from any bucket
 func (m *MinioClient) GetImage(ctx context.Context, bucket, objectName string) ([]byte, string, error) {
 	obj, err := m.client.GetObject(ctx, bucket, objectName, minio.GetObjectOptions{})
 	if err != nil {
@@ -160,37 +146,58 @@ func (m *MinioClient) GetImage(ctx context.Context, bucket, objectName string) (
 	return buf.Bytes(), stat.ContentType, nil
 }
 
-func ServePostImageHandler(storage *MinioClient) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		filename := r.PathValue("filename") // Go 1.21+
-		data, contentType, err := storage.GetImage(r.Context(), "posts", filename)
-		if err != nil {
-			http.Error(w, "Image not found", http.StatusNotFound)
-			return
-		}
-
-		w.Header().Set("Content-Type", contentType)
-		w.WriteHeader(http.StatusOK)
-		w.Write(data)
-	}
-}
-
-func ServeCommentImageHandler(storage *MinioClient) http.HandlerFunc {
+// ServeAvatarImageHandler serves avatar images from the avatars bucket
+func (m *MinioClient) ServeAvatarImageHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filename := r.PathValue("filename")
-		data, contentType, err := storage.GetImage(r.Context(), "comments", filename)
+		data, contentType, err := m.GetImage(r.Context(), m.avatarBucket, filename)
 		if err != nil {
-			http.Error(w, "Image not found", http.StatusNotFound)
+			http.Error(w, "Avatar image not found", http.StatusNotFound)
 			return
 		}
 
 		w.Header().Set("Content-Type", contentType)
+		w.Header().Set("Cache-Control", "public, max-age=31536000") // Cache for 1 year
 		w.WriteHeader(http.StatusOK)
 		w.Write(data)
 	}
 }
 
-// UploadCharacterImageFromURL downloads a character image from a URL and stores it in the sessions bucket
+// ServePostImageHandler serves post images from the posts bucket
+func (m *MinioClient) ServePostImageHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		filename := r.PathValue("filename")
+		data, contentType, err := m.GetImage(r.Context(), m.postBucket, filename)
+		if err != nil {
+			http.Error(w, "Post image not found", http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", contentType)
+		w.Header().Set("Cache-Control", "public, max-age=31536000") // Cache for 1 year
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	}
+}
+
+// ServeCommentImageHandler serves comment images from the comments bucket
+func (m *MinioClient) ServeCommentImageHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		filename := r.PathValue("filename")
+		data, contentType, err := m.GetImage(r.Context(), m.commentBucket, filename)
+		if err != nil {
+			http.Error(w, "Comment image not found", http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", contentType)
+		w.Header().Set("Cache-Control", "public, max-age=31536000") // Cache for 1 year
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	}
+}
+
+// UploadCharacterImageFromURL downloads a character image from a URL and stores it in the avatars bucket
 func (m *MinioClient) UploadCharacterImageFromURL(ctx context.Context, imageUrl string, sessionID string) (string, error) {
 	data, contentType, err := DownloadFile(ctx, imageUrl)
 	if err != nil {
@@ -213,7 +220,7 @@ func (m *MinioClient) UploadCharacterImageFromURL(ctx context.Context, imageUrl 
 	// Use session ID and timestamp for uniqueness
 	objectName := fmt.Sprintf("%s-character-image%s", sessionID, fileExt)
 
-	_, err = m.client.PutObject(ctx, m.sessionBucket, objectName, bytes.NewReader(data), int64(len(data)), minio.PutObjectOptions{
+	_, err = m.client.PutObject(ctx, m.avatarBucket, objectName, bytes.NewReader(data), int64(len(data)), minio.PutObjectOptions{
 		ContentType: contentType,
 	})
 	if err != nil {
@@ -221,20 +228,24 @@ func (m *MinioClient) UploadCharacterImageFromURL(ctx context.Context, imageUrl 
 	}
 
 	// Return the MinIO URL for the stored image
-	return fmt.Sprintf("http://localhost:9001/browser/%s/%s", m.sessionBucket, objectName), nil
+	return fmt.Sprintf("http://localhost:9000/%s/%s", m.avatarBucket, objectName), nil
 }
 
-func ServeSessionImageHandler(storage *MinioClient) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		filename := r.PathValue("filename")
-		data, contentType, err := storage.GetImage(r.Context(), "sessions", filename)
-		if err != nil {
-			http.Error(w, "Image not found", http.StatusNotFound)
-			return
-		}
+// DeleteImage deletes an image from any bucket
+func (m *MinioClient) DeleteImage(ctx context.Context, bucket, objectName string) error {
+	return m.client.RemoveObject(ctx, bucket, objectName, minio.RemoveObjectOptions{})
+}
 
-		w.Header().Set("Content-Type", contentType)
-		w.WriteHeader(http.StatusOK)
-		w.Write(data)
+// GetBucketName returns the bucket name for a given type
+func (m *MinioClient) GetBucketName(imageType string) string {
+	switch imageType {
+	case "avatar":
+		return m.avatarBucket
+	case "post":
+		return m.postBucket
+	case "comment":
+		return m.commentBucket
+	default:
+		return m.avatarBucket
 	}
 }

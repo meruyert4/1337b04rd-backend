@@ -28,7 +28,7 @@ func (s *CommentService) CreateComment(ctx context.Context, comment *models.Comm
 
 	// Handle image upload if provided
 	if imageFile != nil && imageHeader != nil {
-		imageURL, err := s.storage.UploadCommentImageFile(ctx, imageFile, imageHeader.Filename, imageHeader.Header.Get("Content-Type"))
+		imageURL, err := s.storage.UploadCommentImage(ctx, imageFile, imageHeader.Filename, imageHeader.Header.Get("Content-Type"))
 		if err != nil {
 			return err
 		}
@@ -79,7 +79,7 @@ func (s *CommentService) UpdateComment(ctx context.Context, comment *models.Comm
 
 	// Handle image upload if provided
 	if imageFile != nil && imageHeader != nil {
-		imageURL, err := s.storage.UploadCommentImageFile(ctx, imageFile, imageHeader.Filename, imageHeader.Header.Get("Content-Type"))
+		imageURL, err := s.storage.UploadCommentImage(ctx, imageFile, imageHeader.Filename, imageHeader.Header.Get("Content-Type"))
 		if err != nil {
 			return err
 		}
