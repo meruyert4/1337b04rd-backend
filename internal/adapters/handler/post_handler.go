@@ -2,6 +2,7 @@ package handler
 
 import (
 	"1337b04rd/internal/adapters/middleware"
+	"1337b04rd/internal/adapters/storage"
 	"1337b04rd/internal/domain/models"
 	"1337b04rd/internal/domain/ports"
 	"encoding/json"
@@ -20,6 +21,23 @@ type PostHandler struct {
 func NewPostHandler(postService ports.PostService) *PostHandler {
 	return &PostHandler{
 		postService: postService,
+	}
+}
+
+// convertPostURLs converts MinIO URLs to backend proxy URLs in a post
+func convertPostURLs(post *models.Post) {
+	if post.ImageURL != "" {
+		post.ImageURL = storage.ConvertMinioURLToProxyURL(post.ImageURL)
+	}
+	if post.AuthorImage != "" {
+		post.AuthorImage = storage.ConvertMinioURLToProxyURL(post.AuthorImage)
+	}
+}
+
+// convertPostsURLs converts MinIO URLs to backend proxy URLs in a slice of posts
+func convertPostsURLs(posts []*models.Post) {
+	for _, post := range posts {
+		convertPostURLs(post)
 	}
 }
 
@@ -76,7 +94,8 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return created post
+	// Convert URLs and return created post
+	convertPostURLs(post)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(post)
@@ -109,7 +128,8 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return post
+	// Convert URLs and return post
+	convertPostURLs(post)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(post)
 }
@@ -147,7 +167,8 @@ func (h *PostHandler) GetPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return posts
+	// Convert URLs and return posts
+	convertPostsURLs(posts)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(posts)
 }
@@ -185,7 +206,8 @@ func (h *PostHandler) GetPostsByAuthor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return posts
+	// Convert URLs and return posts
+	convertPostsURLs(posts)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(posts)
 }
@@ -271,7 +293,8 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return updated post
+	// Convert URLs and return updated post
+	convertPostURLs(post)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(post)
 }

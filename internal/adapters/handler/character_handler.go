@@ -1,9 +1,9 @@
 package handler
 
 import (
+	"1337b04rd/internal/adapters/externalapi"
 	"encoding/json"
 	"net/http"
-	"1337b04rd/internal/adapters/externalapi"
 )
 
 type CharacterHandler struct {

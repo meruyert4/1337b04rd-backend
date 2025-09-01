@@ -49,6 +49,26 @@ func NewMinioClient(endpoint, accessKey, secretKey string, useSSL bool) (*MinioC
 		}
 	}
 
+	// Makes buckets public
+	for _, bucket := range buckets {
+		policy := fmt.Sprintf(`{
+			"Version": "2012-10-17",
+			"Statement": [
+				{
+					"Effect": "Allow",
+					"Principal": "*",
+					"Action": "s3:GetObject",
+					"Resource": "arn:aws:s3:::%s/*"
+				}
+			]
+		}`, bucket)
+
+		err := client.SetBucketPolicy(context.Background(), bucket, policy)
+		if err != nil {
+			fmt.Printf("Warning: Failed to set public policy for bucket %s: %v\n", bucket, err)
+		}
+	}
+
 	return &MinioClient{
 		client:        client,
 		avatarBucket:  "avatars",
@@ -180,6 +200,47 @@ func (m *MinioClient) ServePostImageHandler() http.HandlerFunc {
 	}
 }
 
+// ServeImageFromURL serves any image from a MinIO URL
+func (m *MinioClient) ServeImageFromURL() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the MinIO URL from query parameter
+		imageURL := r.URL.Query().Get("url")
+		if imageURL == "" {
+			http.Error(w, "Missing image URL", http.StatusBadRequest)
+			return
+		}
+
+		// Extract bucket and filename from MinIO URL
+		// Format: http://localhost:9000/bucket/filename
+		if !strings.HasPrefix(imageURL, "http://localhost:9000/") {
+			http.Error(w, "Invalid MinIO URL", http.StatusBadRequest)
+			return
+		}
+
+		path := strings.TrimPrefix(imageURL, "http://localhost:9000/")
+		parts := strings.SplitN(path, "/", 2)
+		if len(parts) != 2 {
+			http.Error(w, "Invalid URL format", http.StatusBadRequest)
+			return
+		}
+
+		bucket := parts[0]
+		filename := parts[1]
+
+		// Get image from MinIO
+		data, contentType, err := m.GetImage(r.Context(), bucket, filename)
+		if err != nil {
+			http.Error(w, "Image not found", http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", contentType)
+		w.Header().Set("Cache-Control", "public, max-age=31536000") // Cache for 1 year
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	}
+}
+
 // ServeCommentImageHandler serves comment images from the comments bucket
 func (m *MinioClient) ServeCommentImageHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -248,4 +309,14 @@ func (m *MinioClient) GetBucketName(imageType string) string {
 	default:
 		return m.avatarBucket
 	}
+}
+
+// ConvertMinioURLToProxyURL converts a MinIO URL to use the backend proxy
+func ConvertMinioURLToProxyURL(minioURL string) string {
+	// Convert: http://localhost:9000/bucket/filename
+	// To:      http://localhost:8080/images/proxy?url=http://localhost:9000/bucket/filename
+	if strings.HasPrefix(minioURL, "http://localhost:9000/") {
+		return fmt.Sprintf("http://localhost:8080/images/proxy?url=%s", minioURL)
+	}
+	return minioURL // Return original if not a MinIO URL
 }

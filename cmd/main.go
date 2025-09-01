@@ -150,6 +150,7 @@ func setupRouter(app *app.App) *mux.Router {
 	router.HandleFunc("/images/posts/{filename}", app.Storage.ServePostImageHandler()).Methods("GET")
 	router.HandleFunc("/images/comments/{filename}", app.Storage.ServeCommentImageHandler()).Methods("GET")
 	router.HandleFunc("/images/avatars/{filename}", app.Storage.ServeAvatarImageHandler()).Methods("GET")
+	router.HandleFunc("/images/proxy", app.Storage.ServeImageFromURL()).Methods("GET")
 
 	return router
 }
