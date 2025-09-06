@@ -2,6 +2,7 @@ package handler
 
 import (
 	"1337b04rd/internal/adapters/middleware"
+	"1337b04rd/internal/adapters/storage"
 	"1337b04rd/internal/domain/models"
 	"1337b04rd/internal/domain/ports"
 	"encoding/json"
@@ -19,6 +20,23 @@ type CommentHandler struct {
 func NewCommentHandler(commentService ports.CommentService) *CommentHandler {
 	return &CommentHandler{
 		commentService: commentService,
+	}
+}
+
+// convertCommentURLs converts MinIO URLs to backend proxy URLs in a comment
+func convertCommentURLs(comment *models.Comment) {
+	if comment.ImageURL != "" {
+		comment.ImageURL = storage.ConvertMinioURLToProxyURL(comment.ImageURL)
+	}
+	if comment.AuthorImage != "" {
+		comment.AuthorImage = storage.ConvertMinioURLToProxyURL(comment.AuthorImage)
+	}
+}
+
+// convertCommentsURLs converts MinIO URLs to backend proxy URLs in a slice of comments
+func convertCommentsURLs(comments []*models.Comment) {
+	for _, comment := range comments {
+		convertCommentURLs(comment)
 	}
 }
 
@@ -90,7 +108,8 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return created comment
+	// Convert URLs and return created comment
+	convertCommentURLs(comment)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(comment)
@@ -123,7 +142,8 @@ func (h *CommentHandler) GetComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return comment
+	// Convert URLs and return comment
+	convertCommentURLs(comment)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(comment)
 }
@@ -149,7 +169,8 @@ func (h *CommentHandler) GetCommentsByPost(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Return comments
+	// Convert URLs and return comments
+	convertCommentsURLs(comments)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(comments)
 }
@@ -212,11 +233,12 @@ func (h *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 
 	// Create comment model with session data
 	comment := &models.Comment{
-		ID:         commentID,
-		Title:      title,
-		Content:    content,
-		AuthorID:   session.ID,
-		AuthorName: session.Name,
+		ID:          commentID,
+		Title:       title,
+		Content:     content,
+		AuthorID:    session.ID,
+		AuthorName:  session.Name,
+		AuthorImage: session.Image,
 	}
 
 	// Get image file if provided
@@ -235,7 +257,8 @@ func (h *CommentHandler) UpdateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return updated comment
+	// Convert URLs and return updated comment
+	convertCommentURLs(comment)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(comment)
 }

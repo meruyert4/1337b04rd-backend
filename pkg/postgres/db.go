@@ -84,12 +84,14 @@ func InitDB(db *sql.DB) error {
 		}
 	}
 
-	// Run migration to update existing sessions table if needed
+	// Run migration to update existing tables if needed
 	migrationQueries := []string{
 		`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS gender VARCHAR(50)`,
 		`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS age VARCHAR(50)`,
 		`UPDATE sessions SET gender = 'Unknown' WHERE gender IS NULL`,
 		`UPDATE sessions SET age = 'Unknown' WHERE age IS NULL`,
+		`ALTER TABLE posts ADD COLUMN IF NOT EXISTS author_image TEXT`,
+		`ALTER TABLE comments ADD COLUMN IF NOT EXISTS author_image TEXT`,
 	}
 
 	for _, query := range migrationQueries {
